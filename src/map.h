@@ -10,7 +10,9 @@
 
 struct map
 {
-    int alive;
+    int red_alive;
+    int green_alive;
+    int blue_alive;
     struct creature *head;
     struct creature *map[MAP_WIDTH][MAP_HEIGHT];
 };

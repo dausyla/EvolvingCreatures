@@ -7,9 +7,20 @@ static int dy;
 
 static struct map map;
 
+static int hide;
+
+static int keep;
+
+static struct creature **greens;
+static struct creature **blues;
+static struct creature **reds;
+
 struct map *map_init()
 {
-    map.alive = 0;
+    hide = 1;
+    map.red_alive = 0;
+    map.green_alive = 0;
+    map.blue_alive = 0;
     map.head = NULL;
     for (int i = 0; i < MAP_WIDTH; i++)
         for (int j = 0; j < MAP_HEIGHT; j++)
@@ -33,7 +44,12 @@ static void push_front(struct creature *new)
         map.head->prev = new;
     new->prev = NULL;
     map.head = new;
-    map.alive += 1;
+    if (new->color == RED)
+        map.red_alive += 1;
+    if (new->color == GREEN)
+        map.green_alive += 1;
+    if (new->color == BLUE)
+        map.blue_alive += 1;
 }
 
 static struct creature *map_get(int x, int y)
@@ -92,7 +108,8 @@ void new_random_on_map(int color)
 
     map.map[x][y] = new_random(x, y, color);
     push_front(map.map[x][y]);
-    update_new_creature(map.map[x][y]);
+    if (!hide)
+        update_new_creature(map.map[x][y]);
 }
 
 static void get_dx_dy(struct creature *creature)
@@ -121,7 +138,8 @@ static void get_dx_dy(struct creature *creature)
 
 void creature_move(struct creature *creature)
 {
-    update_less_creature(creature);
+    if (!hide)
+        update_less_creature(creature);
 
     x = creature->x;
     y = creature->y;
@@ -137,7 +155,8 @@ void creature_move(struct creature *creature)
     }
     else
         creature->score -= 5;
-    update_new_creature(creature);
+    if (!hide)
+        update_new_creature(creature);
 }
 
 static void unlink_creature(struct creature *rm)
@@ -150,7 +169,12 @@ static void unlink_creature(struct creature *rm)
     if (rm->next)
         rm->next->prev = rm->prev;
 
-    map.alive-=1;
+    if (rm->color == RED)
+        map.red_alive-=1;
+    if (rm->color == GREEN)
+        map.green_alive-=1;
+    if (rm->color == BLUE)
+        map.blue_alive-=1;
 };
 
 
@@ -169,7 +193,8 @@ void creature_kill(struct creature *creature)
             creature->score -= 20;
         else
             creature->score += 50;
-        update_less_creature(killed);
+        if (!hide)
+            update_less_creature(killed);
         unlink_creature(killed);
         creature_death(killed);
         map_set(x + dx, y + dy, NULL);
@@ -203,7 +228,8 @@ void creature_reproduce(struct creature *creature)
             {
                 map.map[new_x][new_y] = new_child(creature);
                 push_front(map.map[new_x][new_y]);
-                update_new_creature(map.map[new_x][new_y]);
+                if (!hide)
+                    update_new_creature(map.map[new_x][new_y]);
                 creature->score += 100;
             }
     }
@@ -280,4 +306,75 @@ struct creature **get_creatures_seen(struct creature *creature, struct creature 
             for (int j = -i; j <= i; j++)
                 seen[index++] = map_get(x - i, y - j);
     }
+}
+
+void keep_bests(int n)
+{
+    greens = calloc(sizeof(struct creature*), map.green_alive);
+    reds = calloc(sizeof(struct creature*), map.red_alive);
+    blues = calloc(sizeof(struct creature*), map.blue_alive);
+    struct creature *cp = map.head;
+    int i;
+    int ig = 0;
+    int ib = 0;
+    int ir = 0;
+    while (cp)
+    {
+        i = 0;
+        if (cp->color == GREEN)
+        {
+            while (i < ig && greens[i]->score > cp->score)
+                i++;
+            for (int k = ig; k > i; k--)
+                greens[k] = greens[k-1];
+            greens[i] = cp;
+            ig++;
+        }
+        if (cp->color == RED)
+        {
+            while (i < ir && reds[i]->score > cp->score)
+                i++;
+            for (int k = ir; k > i; k--)
+                reds[k] = reds[k-1];
+            reds[i] = cp;
+            ir++;
+        }
+        if (cp->color == BLUE)
+        {
+            while (i < ib && blues[i]->score > cp->score)
+                i++;
+            for (int k = ib; k > i; k--)
+                blues[k] = blues[k-1];
+            blues[i] = cp;
+            ib++;
+        }
+        cp = cp->next;
+    }
+
+    map.head = greens[0];
+    for (i = 0; i < n - 1 && i < ig - 1; i++)
+        greens[i]->next = greens[i + 1];
+    greens[i]->next = blues[0];
+    greens[i] = NULL;
+    for (i = 0; i < n - 1 && i < ib - 1; i++)
+        blues[i]->next = blues[i + 1];
+    blues[i]->next = reds[0];
+    blues[i] = NULL;
+    for (i = 0; i < n - 1 && i < ir - 1; i++)
+        reds[i]->next = reds[i + 1];
+    reds[i] = NULL;
+
+    for (i = n; i < ig; i++)
+        creature_death(greens[i]);
+    for (i = n; i < ib; i++)
+        creature_death(blues[i]);
+    for (i = n; i < ir; i++)
+        creature_death(reds[i]);
+}
+
+void repopulate(int k, int n)
+{
+    free(greens);
+    free(blues);
+    free(reds);
 }

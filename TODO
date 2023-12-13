@@ -1,8 +1,6 @@
 todo :
 
--add 'color_alive' and be carefull to remove 'alive'
--sort by color
--keep the 20% best of each
--repopulate (add 4 similar to the 20% best with a limit)
+-keep the kth best every gen
+-repopulate
 -restart loop
 -destroy_creatures();
