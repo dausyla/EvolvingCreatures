@@ -1,15 +1,17 @@
 #ifndef SDL_H
 #define SDL_H
 
-#define CREATURE_SIZE 5
-
 #include <SDL2/SDL.h>
 
 #include "creature.h"
 #include "map.h"
 #include "tools.h"
 
-int sdl_init();
+int sdl_init(int w, int h, int cz, int fr);
+
+void sdl_delay();
+
+void sdl_clear();
 
 void update_new_creature(struct creature *crea);
 

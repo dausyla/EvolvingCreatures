@@ -7,24 +7,43 @@ static int dy;
 
 static struct map map;
 
+static int map_width;
+static int map_height;
+
 static int hide;
 
-static int keep;
-
-static struct creature **greens;
-static struct creature **blues;
-static struct creature **reds;
-
-struct map *map_init()
+struct map *map_init(int w, int h)
 {
+    map_width = w;
+    map_height = h;
     hide = 1;
     map.red_alive = 0;
     map.green_alive = 0;
     map.blue_alive = 0;
     map.head = NULL;
-    for (int i = 0; i < MAP_WIDTH; i++)
-        for (int j = 0; j < MAP_HEIGHT; j++)
+    map.map = malloc(sizeof(struct creator **) * map_width);
+    for (int i = 0; i < w; i++)
+    {
+        map.map[i] = malloc(sizeof(struct creature *) * map_height);
+        for (int j = 0; j < h; j++)
             map.map[i][j] = NULL;
+    }
+    return &map;
+}
+
+void map_show()
+{
+    hide = 0;
+}
+
+void map_hide()
+{
+    hide = 1;
+}
+
+struct creature *map_get_head()
+{
+    return map.head;
 }
 
 void map_next()
@@ -35,6 +54,21 @@ void map_next()
         creature_next(p);
         p = p->next;
     }
+}
+
+void map_fflush(int nb)
+{
+    sdl_clear();
+    struct creature *p = map.head;
+    while (p)
+    {
+        update_new_creature(p);
+        p->score = 0;
+        p = p->next;
+    }
+    map.green_alive = nb;
+    map.red_alive = nb;
+    map.blue_alive = nb;
 }
 
 static void push_front(struct creature *new)
@@ -55,44 +89,44 @@ static void push_front(struct creature *new)
 static struct creature *map_get(int x, int y)
 {
     while (x < 0)
-        x += MAP_WIDTH;
-    while (x >= MAP_WIDTH)
-        x -= MAP_WIDTH;
+        x += map_width;
+    while (x >= map_width)
+        x -= map_width;
     while (y < 0)
-        y += MAP_HEIGHT;
-    while (y >= MAP_HEIGHT)
-        y -= MAP_HEIGHT;
+        y += map_height;
+    while (y >= map_height)
+        y -= map_height;
     return map.map[x][y];
 }
 
 static void map_set(int x, int y, struct creature *crea)
 {
     while (x < 0)
-        x += MAP_WIDTH;
-    while (x >= MAP_WIDTH)
-        x -= MAP_WIDTH;
+        x += map_width;
+    while (x >= map_width)
+        x -= map_width;
     while (y < 0)
-        y += MAP_HEIGHT;
-    while (y >= MAP_HEIGHT)
-        y -= MAP_HEIGHT;
+        y += map_height;
+    while (y >= map_height)
+        y -= map_height;
     map.map[x][y] = crea;
 }
 
 static int modw(int x)
 {
     while (x < 0)
-        x += MAP_WIDTH;
-    while (x >= MAP_WIDTH)
-        x -= MAP_WIDTH;
+        x += map_width;
+    while (x >= map_width)
+        x -= map_width;
     return x;
 }
 
 static int modh(int x)
 {
     while (x < 0)
-        x += MAP_HEIGHT;
-    while (x >= MAP_HEIGHT)
-        x -= MAP_HEIGHT;
+        x += map_height;
+    while (x >= map_height)
+        x -= map_height;
     return x;
 }
 
@@ -107,6 +141,38 @@ void new_random_on_map(int color)
     }
 
     map.map[x][y] = new_random(x, y, color);
+    push_front(map.map[x][y]);
+    if (!hide)
+        update_new_creature(map.map[x][y]);
+}
+
+void new_similar_on_map(struct creature *best)
+{
+    x = rand_x();
+    y = rand_y();
+    while (map.map[x][y])
+    {
+        x = rand_x();
+        y = rand_y();
+    }
+
+    map.map[x][y] = new_similar(x, y, best);
+    push_front(map.map[x][y]);
+    if (!hide)
+        update_new_creature(map.map[x][y]);
+}
+
+void new_best_on_map(struct creature *best)
+{
+    x = rand_x();
+    y = rand_y();
+    while (map.map[x][y])
+    {
+        x = rand_x();
+        y = rand_y();
+    }
+
+    map.map[x][y] = new_best(x, y, best);
     push_front(map.map[x][y]);
     if (!hide)
         update_new_creature(map.map[x][y]);
@@ -189,18 +255,14 @@ void creature_kill(struct creature *creature)
 
     if (killed)
     {
-        if (killed->color == creature->color)
-            creature->score -= 20;
-        else
-            creature->score += 50;
+        if (killed->color != creature->color)
+            creature->score += 20;
         if (!hide)
             update_less_creature(killed);
         unlink_creature(killed);
         creature_death(killed);
         map_set(x + dx, y + dy, NULL);
     }
-    else
-        creature->score -= 5;
 }
 
 void creature_reproduce(struct creature *creature)
@@ -226,15 +288,13 @@ void creature_reproduce(struct creature *creature)
                     }
             if (new_x != -1 || new_y != -1)
             {
-                map.map[new_x][new_y] = new_child(creature);
+                map.map[new_x][new_y] = new_similar(new_x, new_y, creature);
                 push_front(map.map[new_x][new_y]);
                 if (!hide)
                     update_new_creature(map.map[new_x][new_y]);
-                creature->score += 100;
+                creature->score += 20;
             }
     }
-    else
-        creature->score -= 10;
 }
 
 struct creature **get_creatures_seen(struct creature *creature, struct creature *seen[])
@@ -308,73 +368,27 @@ struct creature **get_creatures_seen(struct creature *creature, struct creature 
     }
 }
 
-void keep_bests(int n)
+
+void creature_destroy_rec(struct creature *c)
 {
-    greens = calloc(sizeof(struct creature*), map.green_alive);
-    reds = calloc(sizeof(struct creature*), map.red_alive);
-    blues = calloc(sizeof(struct creature*), map.blue_alive);
-    struct creature *cp = map.head;
-    int i;
-    int ig = 0;
-    int ib = 0;
-    int ir = 0;
-    while (cp)
+    if (c)
     {
-        i = 0;
-        if (cp->color == GREEN)
-        {
-            while (i < ig && greens[i]->score > cp->score)
-                i++;
-            for (int k = ig; k > i; k--)
-                greens[k] = greens[k-1];
-            greens[i] = cp;
-            ig++;
-        }
-        if (cp->color == RED)
-        {
-            while (i < ir && reds[i]->score > cp->score)
-                i++;
-            for (int k = ir; k > i; k--)
-                reds[k] = reds[k-1];
-            reds[i] = cp;
-            ir++;
-        }
-        if (cp->color == BLUE)
-        {
-            while (i < ib && blues[i]->score > cp->score)
-                i++;
-            for (int k = ib; k > i; k--)
-                blues[k] = blues[k-1];
-            blues[i] = cp;
-            ib++;
-        }
-        cp = cp->next;
+        creature_destroy_rec(c->next);
+        map_set(c->x, c->y, NULL);
+        creature_death(c);
     }
-
-    map.head = greens[0];
-    for (i = 0; i < n - 1 && i < ig - 1; i++)
-        greens[i]->next = greens[i + 1];
-    greens[i]->next = blues[0];
-    greens[i] = NULL;
-    for (i = 0; i < n - 1 && i < ib - 1; i++)
-        blues[i]->next = blues[i + 1];
-    blues[i]->next = reds[0];
-    blues[i] = NULL;
-    for (i = 0; i < n - 1 && i < ir - 1; i++)
-        reds[i]->next = reds[i + 1];
-    reds[i] = NULL;
-
-    for (i = n; i < ig; i++)
-        creature_death(greens[i]);
-    for (i = n; i < ib; i++)
-        creature_death(blues[i]);
-    for (i = n; i < ir; i++)
-        creature_death(reds[i]);
 }
 
-void repopulate(int k, int n)
+void map_clear()
 {
-    free(greens);
-    free(blues);
-    free(reds);
+    creature_destroy_rec(map.head);
+    map.head = NULL;
+}
+
+void map_destroy()
+{
+    map_clear();
+    for(int i = 0; i < map_width; i++)
+        free(map.map[i]);
+    free(map.map);
 }

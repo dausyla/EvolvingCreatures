@@ -7,7 +7,7 @@
 #include "creature.h"
 #include "map.h"
 
-void tool_init();
+void tool_init(int w, int h);
 
 double sigmoid(double x);
 void get_direction_int(double output, struct creature *crea);

@@ -1,7 +1,12 @@
 #include "tools.h"
 
-void tool_init()
+static int width;
+static int height;
+
+void tool_init(int w, int h)
 {
+    width = w;
+    height = h;
     srand(2);
 }
 
@@ -61,9 +66,9 @@ int randomize_weight(int weight, int i)
 
 int rand_x()
 {
-    return rand() % MAP_WIDTH;
+    return rand() % width;
 }
 int rand_y()
 {
-    return rand() % MAP_HEIGHT;
+    return rand() % height;
 }

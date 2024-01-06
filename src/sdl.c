@@ -6,11 +6,16 @@ static SDL_Rect rect;
 
 static int window_w;
 static int window_h;
+static int creature_size;
 
-int sdl_init()
+static int frame_rate;
+
+int sdl_init(int w, int h, int cz, int fr)
 {
-    window_w = CREATURE_SIZE * MAP_WIDTH;
-    window_h = CREATURE_SIZE * MAP_HEIGHT;
+    frame_rate = fr;
+    window_w = cz * w;
+    window_h = cz * h;
+    creature_size = cz;
 
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -38,10 +43,21 @@ int sdl_init()
         return 1;
     }
 
-    rect.w = CREATURE_SIZE;
-    rect.h = CREATURE_SIZE;
+    rect.w = creature_size;
+    rect.h = creature_size;
 
     return 0;
+}
+
+void sdl_delay()
+{
+    SDL_Delay(frame_rate);
+}
+
+void sdl_clear()
+{
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
 }
 
 void update_new_creature(struct creature *crea)
@@ -53,8 +69,8 @@ void update_new_creature(struct creature *crea)
     if (crea->color == BLUE)
         SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
 
-    rect.x = crea->x * CREATURE_SIZE;
-    rect.y = crea->y * CREATURE_SIZE;
+    rect.x = crea->x * creature_size;
+    rect.y = crea->y * creature_size;
     SDL_RenderFillRect(renderer, &rect);
 }
 
@@ -62,8 +78,8 @@ void update_less_creature(struct creature *crea)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-    rect.x = crea->x * CREATURE_SIZE;
-    rect.y = crea->y * CREATURE_SIZE;
+    rect.x = crea->x * creature_size;
+    rect.y = crea->y * creature_size;
     SDL_RenderFillRect(renderer, &rect);
 }
 

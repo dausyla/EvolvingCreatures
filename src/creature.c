@@ -8,6 +8,8 @@ static int action;
 
 static struct creature *seen[INPUT];
 
+static int id;
+
 static void brainize(struct creature *creature, struct creature **seen)
 {
     double ***weight = creature->brain->weight;
@@ -46,9 +48,9 @@ static void brainize(struct creature *creature, struct creature **seen)
 static void get_score(struct creature *c)
 {
     if (c->action != c->last_action)
-        c->score += 1;
+        c->score += 3;
     if (c->last_delta != c->delta)
-        c->score += 1;
+        c->score += 2;
 }
 
 void creature_next(struct creature *creature)
@@ -68,7 +70,6 @@ static void fill_brain_parent(struct brain *brain, struct brain *parent, int gen
 {
     brain->weight = malloc(sizeof(double **) * 2);
     brain->weight[0] = malloc(sizeof(double *) * INPUT);
-    brain->weight[1] = malloc(sizeof(double *) * HIDDEN);
     for (int i = 0; i < INPUT; i++)
     {
         brain->weight[0][i] = malloc(sizeof(double) * HIDDEN);
@@ -124,8 +125,10 @@ static void fill_brain_random(struct brain *brain)
 struct creature *new_random(int x, int y, int color)
 {
     struct creature *new = malloc(sizeof(struct creature));
+    new->id = id++;
     new->x = x;
     new->y = y;
+    new->is_best = 0;
 
     new->direction = random_direction();
     new->color = color;
@@ -140,11 +143,30 @@ struct creature *new_random(int x, int y, int color)
     return new;
 }
 
-struct creature *new_child(struct creature *parent)
+struct creature *new_best(int x, int y, struct creature *best)
 {
     struct creature *new = malloc(sizeof(struct creature));
-    new->x = parent->x;
-    new->y = parent->y;
+    new->id = best->id;
+    new->x = x;
+    new->y = y;
+    new->is_best = 1;
+
+    new->direction = best->direction;
+    new->color = best->color;
+    new->generation = best->generation + 1;
+
+    new->brain = best->brain;
+    new->score = 0;
+    return new;
+}
+
+struct creature *new_similar(int x, int y, struct creature *parent)
+{
+    struct creature *new = malloc(sizeof(struct creature));
+    new->id = id++;
+    new->x = x;
+    new->y = y;
+    new->is_best = 0;
 
     new->direction = parent->direction;
     new->color = parent->color;
@@ -163,18 +185,22 @@ void creature_death(struct creature *creature)
 {
     if (creature)
     {
-        for (int i = 0; i < INPUT; i++)
-            free(creature->brain->weight[0][i]);
-        for (int i = 0; i < HIDDEN; i++)
-            free(creature->brain->weight[1][i]);
-        free(creature->brain->weight[0]);
-        free(creature->brain->weight[1]);
+        if (!creature->is_best)
+        {
+            for (int i = 0; i < INPUT; i++)
+                free(creature->brain->weight[0][i]);
+            for (int i = 0; i < HIDDEN; i++)
+                free(creature->brain->weight[1][i]);
+            free(creature->brain->weight[0]);
+            free(creature->brain->weight[1]);
+            free(creature->brain->weight);
 
-        free(creature->brain->bias[0]);
-        free(creature->brain->bias[1]);
-        free(creature->brain->bias);
+            free(creature->brain->bias[0]);
+            free(creature->brain->bias[1]);
+            free(creature->brain->bias);
 
-        free(creature->brain);
+            free(creature->brain);
+        }
         free(creature);
     }
 }

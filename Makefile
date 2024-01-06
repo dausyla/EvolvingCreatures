@@ -4,7 +4,7 @@ TARGET=evol_crea
 CFLAGS=-Werror
 LDFLAGS=-lm -lSDL2
 
-SRC=src/map.c src/creature.c src/tools.c src/main.c src/sdl.c
+SRC=src/map.c src/creature.c src/tools.c src/main.c src/sdl.c src/natsel.c
 OBJS=$(SRC:.c=.o)
 
 all: $(OBJS)

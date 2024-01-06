@@ -47,6 +47,7 @@ struct brain
 
 struct creature
 {
+    int id;
     int x;
     int y;
     int direction;
@@ -60,6 +61,7 @@ struct creature
     int last_delta;
     int action;
     int last_action;
+    int is_best;
 };
 
 #include "map.h"
@@ -69,7 +71,9 @@ void creature_next(struct creature *creature);
 
 struct creature *new_random(int x, int y, int color);
 
-struct creature *new_child(struct creature *parent);
+struct creature *new_similar(int x, int y, struct creature *parent);
+
+struct creature *new_best(int x, int y, struct creature *best);
 
 void creature_death(struct creature *creature);
 

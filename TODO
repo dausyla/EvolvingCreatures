@@ -1,6 +1,5 @@
 todo :
 
--keep the kth best every gen
--repopulate
--restart loop
--destroy_creatures();
+-add maccros for everything
+-add UI
+-add comments

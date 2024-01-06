@@ -4,32 +4,40 @@
 #include "tools.h"
 #include "map.h"
 #include "creature.h"
+#include "natsel.h"
+
+#define MAP_WIDTH 50
+#define MAP_HEIGHT 50
+#define CREATURE_SIZE 15
+
+#define TOTAL 25
+#define BEST 11
+#define SIMILAR 11
+#define LIFE_LONG 100
+
+#define TRAIN_HIDE 10000
+#define TRAIN 10
+
+#define FRAME_RATE 50
 
 int main()
 {
-    tool_init();
+    tool_init(MAP_WIDTH, MAP_HEIGHT);
 
-    //if (sdl_init() == 1)
-    //    return 1;
+    struct map *map = map_init(MAP_WIDTH, MAP_HEIGHT);
 
-    struct map *map = map_init();
+    natsel_init(TOTAL, BEST, SIMILAR, LIFE_LONG);
 
-    add_random_creature(100);
-    for (int i = 0; i < 10; i++)
-        life_loop_hide(500);
+    if (sdl_init(MAP_WIDTH, MAP_HEIGHT, CREATURE_SIZE, FRAME_RATE) == 1)
+        return 1;
 
-    struct creature *p = map->head;
-    int i = 0;
-    while (p)
-    {
-        printf("score %d : %d\n", i, p->score);
-        p = p->next;
-        i++;
-    }
+    train_hide(TRAIN_HIDE, 1);
 
-    //SDL_Delay(2000);
+    train(TRAIN, 0);
 
-    //quit_sdl();
+    quit_sdl();
+
+    map_destroy();
 
     return 0;
 }
