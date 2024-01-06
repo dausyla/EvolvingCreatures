@@ -1,15 +1,25 @@
 #include "creature.h"
 
+// input layer used for every neural network (explained in creature.h)
 static double input[INPUT];
+// hidden layer
 static double hidden[HIDDEN];
+// output layer (explained in creature.h)
 static double output[OUTPUT];
 
+// action decided by creatures
 static int action;
 
+// all creatures seen by one creature (used for the input layer)
 static struct creature *seen[INPUT];
 
+// id for the next creature to be initialized
 static int id;
 
+/* uses the brain of the creature to decide next action
+ * (does the actual neural network matrix multiplication)
+ * action is then set
+ * direction is set in the creature struct */
 static void brainize(struct creature *creature, struct creature **seen)
 {
     double ***weight = creature->brain->weight;
@@ -45,6 +55,7 @@ static void brainize(struct creature *creature, struct creature **seen)
     get_action_int(output[0], creature);
 }
 
+// update the score of the creature depending his choice this round
 static void get_score(struct creature *c)
 {
     if (c->action != c->last_action)
@@ -53,6 +64,7 @@ static void get_score(struct creature *c)
         c->score += 2;
 }
 
+// get the whole next status of the creature
 void creature_next(struct creature *creature)
 {
     get_creatures_seen(creature, seen);
@@ -66,6 +78,8 @@ void creature_next(struct creature *creature)
         creature_kill(creature);
 }
 
+/* fill the brain of the new creature
+ * from a parent creature depending its generation */
 static void fill_brain_parent(struct brain *brain, struct brain *parent, int generation)
 {
     brain->weight = malloc(sizeof(double **) * 2);
@@ -94,6 +108,7 @@ static void fill_brain_parent(struct brain *brain, struct brain *parent, int gen
         brain->bias[1][i] = random_weight(parent->bias[1][i], generation);
 }
 
+// fill the brain with fully random weight and bias
 static void fill_brain_random(struct brain *brain)
 {
     brain->weight = malloc(sizeof(double **) * 2);
@@ -122,6 +137,7 @@ static void fill_brain_random(struct brain *brain)
         brain->bias[1][i] = random_weight();
 }
 
+// create a totally new random creature
 struct creature *new_random(int x, int y, int color)
 {
     struct creature *new = malloc(sizeof(struct creature));
@@ -143,6 +159,7 @@ struct creature *new_random(int x, int y, int color)
     return new;
 }
 
+// create a new creature from a parent and a generation (during its life)
 struct creature *new_best(int x, int y, struct creature *best)
 {
     struct creature *new = malloc(sizeof(struct creature));
@@ -160,6 +177,7 @@ struct creature *new_best(int x, int y, struct creature *best)
     return new;
 }
 
+// create a similar creature from a parent (for a new life simulation)
 struct creature *new_similar(int x, int y, struct creature *parent)
 {
     struct creature *new = malloc(sizeof(struct creature));
@@ -181,6 +199,7 @@ struct creature *new_similar(int x, int y, struct creature *parent)
     return new;
 }
 
+// free all the memory used by the creature and destroys it
 void creature_death(struct creature *creature)
 {
     if (creature)
