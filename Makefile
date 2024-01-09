@@ -1,7 +1,7 @@
 CC=gcc
 TARGET=evol_crea
 
-CFLAGS=-Werror
+CFLAGS=-Werror -O3
 LDFLAGS=-lm -lSDL2
 
 SRC=src/map.c src/creature.c src/tools.c src/main.c src/sdl.c src/natsel.c

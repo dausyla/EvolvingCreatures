@@ -1,5 +1,7 @@
 #include "natsel.h"
 
+static char *path;
+
 static int nb_best;
 static int nb_similar;
 static int nb_random;
@@ -14,8 +16,9 @@ static int ng;
 static int nb;
 static int nr;
 
-void natsel_init(int tot, int b, int s, int ll)
+void natsel_init(int tot, int b, int s, int ll, char *p)
 {
+    path = p;
     total = tot;
     nb_best = b;
     nb_similar = s;
@@ -159,5 +162,39 @@ void train_hide(int gen, int init)
     {
         life_loop_hide();
         printf("gen number %d\n", i);
+    }
+}
+
+static void write_brain(struct creature *crea, FILE *file)
+{
+}
+
+static void read_brain(struct creature *crea, FILE *file)
+{
+}
+
+void get_bests()
+{
+    FILE *file = fopen(path, "r");
+    if (!file)
+        errx(1, "No best brain file");
+    struct creature *c;
+    for (int i = 0; i < nb_best; i++)
+    {
+        read_brain(reds + i, file);
+        read_brain(greens + i, file);
+        read_brain(blues + i, file);
+    }
+}
+
+void save_bests()
+{
+    FILE *file = fopen(path, "w");
+    struct creature *c;
+    for (int i = 0; i < nb_best; i++)
+    {
+        write_brain(reds + i, file);
+        write_brain(greens + i, file);
+        write_brain(blues + i, file);
     }
 }

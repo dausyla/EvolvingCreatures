@@ -18,19 +18,19 @@
 // best creatures we keep
 #define BEST 8
 // how much similar from the best
-#define SIMILAR 16
+#define SIMILAR 24
 // rest is random
 
 // how much iteration life will last
-#define LIFE_LONG 100
+#define LIFE_LONG 60
 
 // how much hidden train
-#define TRAIN_HIDE 10000
+#define TRAIN_HIDE 50000
 // how much shown train after hidden ones
-#define TRAIN 5
+#define TRAIN 6
 
 // framerate (in milli-seconds)
-#define FRAME_RATE 50
+#define FRAME_RATE 200
 
 int main()
 {
